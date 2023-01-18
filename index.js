@@ -14,7 +14,9 @@ const port = process.env.port || 5000;
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://bookship_admin:Ak3z5tDNm3OlXw8G@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
+
 // console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -95,6 +97,7 @@ async function run() {
       const user = await userCollection.findOne({
         email: email,
       });
+      // console.log(user);
       res.send(user);
     });
 
