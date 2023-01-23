@@ -1,11 +1,11 @@
-const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const cors = require('cors');
+const express = require("express");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const cors = require("cors");
 // const jwt = require('jsonwebtoken');
 
-require('dotenv').config();
+require("dotenv").config();
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.port || 5000;
@@ -30,12 +30,12 @@ const client = new MongoClient(uri, {
 const verifyJwt = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(401).send('Unauthorized request');
+    return res.status(401).send("Unauthorized request");
   }
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
     if (err) {
-      return res.status(401).send('Unauthorized request');
+      return res.status(401).send("Unauthorized request");
     }
     req.decoded = decoded;
     next();
@@ -45,26 +45,27 @@ const verifyJwt = (req, res, next) => {
 async function run() {
   try {
     // await client.connect();
-    const categoryCollection = client.db('bookship').collection('categories');
-    const userCollection = client.db('bookship').collection('user');
-    const bookCollection = client.db('bookship').collection('books');
-    const bookingCollection = client.db('bookship').collection('booking');
+    const categoryCollection = client.db("bookship").collection("categories");
+    const userCollection = client.db("bookship").collection("user");
+    const bookCollection = client.db("bookship").collection("books");
+    const bookingCollection = client.db("bookship").collection("booking");
+    const commentsCollection = client.db("bookship").collection("comments");
 
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const booking = req.body;
       const price = parseInt(booking.price);
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
-        payment_method_types: ['card'],
+        currency: "usd",
+        payment_method_types: ["card"],
       });
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
     });
 
-    app.post('/jwt', (req, res) => {
+    app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
       res.send({ token });
@@ -72,7 +73,7 @@ async function run() {
     });
 
     // get all categories from category collection
-    app.get('/categories', async (req, res) => {
+    app.get("/categories", async (req, res) => {
       const cursor = categoryCollection.find({});
       const categories = await cursor.toArray();
       // console.log(categories)
@@ -80,7 +81,7 @@ async function run() {
     });
 
     // upsert user information to user collection
-    app.post('/user', async (req, res) => {
+    app.post("/user", async (req, res) => {
       const user = req.body;
       const result = await userCollection.updateOne(
         { email: user.email },
@@ -92,7 +93,7 @@ async function run() {
     });
 
     // get user role from userCollection based on email query
-    app.get('/user', async (req, res) => {
+    app.get("/user", async (req, res) => {
       const email = req.query.email;
       const user = await userCollection.findOne({
         email: email,
@@ -102,7 +103,7 @@ async function run() {
     });
 
     // patch user to update user role and email on social login
-    app.patch('/user', async (req, res) => {
+    app.patch("/user", async (req, res) => {
       const user = req.body;
       const result = await userCollection.updateOne(
         { email: user.email },
@@ -113,7 +114,7 @@ async function run() {
     });
 
     // post new book to book collection
-    app.post('/book', async (req, res) => {
+    app.post("/book", async (req, res) => {
       const book = req.body;
       const result = await bookCollection.insertOne(book);
       // console.log(result)
@@ -121,14 +122,14 @@ async function run() {
     });
 
     // get book by id
-    app.get('/book/:id', async (req, res) => {
+    app.get("/book/:id", async (req, res) => {
       const id = req.params.id;
       const book = await bookCollection.findOne({ _id: ObjectId(id) });
       res.send(book);
     });
 
     // get all books from book collection
-    app.get('/books', async (req, res) => {
+    app.get("/books", async (req, res) => {
       const cursor = bookCollection.find({});
       const books = await cursor.toArray();
       // console.log(books)
@@ -136,15 +137,15 @@ async function run() {
     });
 
     // get all the books which have isAdvertised = "yes"
-    app.get('/advertisedBooks', async (req, res) => {
-      const cursor = bookCollection.find({ isAdvertise: 'yes' });
+    app.get("/advertisedBooks", async (req, res) => {
+      const cursor = bookCollection.find({ isAdvertise: "yes" });
       const books = await cursor.toArray();
       // console.log(books)
       res.send(books.reverse());
     });
 
     // get lastly added 3 books from book collection
-    app.get('/recents', async (req, res) => {
+    app.get("/recents", async (req, res) => {
       const cursor = bookCollection.find({}).sort({ _id: -1 }).limit(3);
       const books = await cursor.toArray();
       // console.log(books)
@@ -152,7 +153,7 @@ async function run() {
     });
 
     // get the category title based on id params
-    app.get('/category/:id', async (req, res) => {
+    app.get("/category/:id", async (req, res) => {
       const id = req.params.id;
       const category = await categoryCollection.findOne({
         _id: ObjectId(id),
@@ -163,7 +164,7 @@ async function run() {
     // need jwt
 
     // filter books by seller email and skip the books which have the same email as the query
-    app.get('/booksbyseller', async (req, res) => {
+    app.get("/booksbyseller", async (req, res) => {
       const email = req.query.email;
       const cursor = bookCollection.find({ selleremail: { $ne: email } });
       const books = await cursor.toArray();
@@ -174,7 +175,7 @@ async function run() {
     // need jwt
 
     // get books for a specific seller by seller email
-    app.get('/booksforseller', async (req, res) => {
+    app.get("/booksforseller", async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -191,7 +192,7 @@ async function run() {
     });
 
     // update book status based on id params using patch method
-    app.patch('/books/:id', async (req, res) => {
+    app.patch("/books/:id", async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -203,7 +204,7 @@ async function run() {
     });
 
     // add reported: true to book collection based on id params
-    app.patch('/report/:id', async (req, res) => {
+    app.patch("/report/:id", async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -215,14 +216,14 @@ async function run() {
     });
 
     // delete book based on id params
-    app.delete('/books/:id', async (req, res) => {
+    app.delete("/books/:id", async (req, res) => {
       const id = req.params.id;
       const result = await bookCollection.deleteOne({ _id: ObjectId(id) });
       res.json(result);
     });
 
     // update isAdvertise status based on id params using patch method
-    app.patch('/advertise/:id', async (req, res) => {
+    app.patch("/advertise/:id", async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -234,7 +235,7 @@ async function run() {
     });
 
     // update price based on id params using patch method
-    app.patch('/updateprice/:id', async (req, res) => {
+    app.patch("/updateprice/:id", async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -246,7 +247,7 @@ async function run() {
     });
 
     // post booking data to database
-    app.post('/booking', async (req, res) => {
+    app.post("/booking", async (req, res) => {
       const booking = req.body;
       const result = await bookingCollection.insertOne(booking);
       // console.log(result)
@@ -256,7 +257,7 @@ async function run() {
     // need jwt
 
     // get bookings based on email query and match the email with selleremail
-    app.get('/bookings', async (req, res) => {
+    app.get("/bookings", async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -272,7 +273,7 @@ async function run() {
 
     // need jwt
     // get bookings based on email query and match the email with buyeremail
-    app.get('/buyerbookings', async (req, res) => {
+    app.get("/buyerbookings", async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -288,7 +289,7 @@ async function run() {
     });
 
     // get bookings by id
-    app.get('/booking/:id', async (req, res) => {
+    app.get("/booking/:id", async (req, res) => {
       const id = req.params.id;
       const booking = await bookingCollection.findOne({
         _id: ObjectId(id),
@@ -297,7 +298,7 @@ async function run() {
     });
 
     // update booking isPaid status based on id params using patch method
-    app.patch('/booking/:id', async (req, res) => {
+    app.patch("/booking/:id", async (req, res) => {
       const id = req.params.id;
       const booking = req.body;
       const result = await bookingCollection.updateOne(
@@ -315,7 +316,7 @@ async function run() {
     });
 
     // get all the users
-    app.get('/users', async (req, res) => {
+    app.get("/users", async (req, res) => {
       const cursor = userCollection.find({});
       const users = await cursor.toArray();
       // console.log(users)
@@ -323,14 +324,14 @@ async function run() {
     });
 
     // delete user by email query
-    app.delete('/users', async (req, res) => {
+    app.delete("/users", async (req, res) => {
       const email = req.query.email;
       const result = await userCollection.deleteOne({ email: email });
       res.json(result);
     });
 
     // update user role by email query
-    app.patch('/users', async (req, res) => {
+    app.patch("/users", async (req, res) => {
       const email = req.query.email;
       const user = req.body;
       const result = await userCollection.updateOne(
@@ -342,7 +343,7 @@ async function run() {
     });
 
     // verify seller by email query
-    app.patch('/verify', async (req, res) => {
+    app.patch("/verify", async (req, res) => {
       const email = req.query.email;
       const user = req.body;
       const result = await userCollection.updateOne(
@@ -352,14 +353,28 @@ async function run() {
       );
       res.json(result);
     });
+
+    // Create Comment by MORSHED
+    app.post("/post-comment", async (req, res) => {
+      const comment = req.body;
+      const result = await commentsCollection.insertOne(comment);
+      res.send(result);
+    });
+
+    // Get All Comments by MORSHED
+    app.get("/comments", async (req, res) => {
+      const query = {};
+      const comments = await commentsCollection.find(query).toArray();
+      res.send(comments);
+    });
   } finally {
   }
 }
 
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Bookship server running nonstop');
+app.get("/", (req, res) => {
+  res.send("Bookship server running nonstop");
 });
 
 app.listen(port, () => {
