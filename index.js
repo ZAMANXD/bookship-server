@@ -48,11 +48,12 @@ async function run() {
     const categoryCollection = client.db('bookship').collection('categories');
     const userCollection = client.db('bookship').collection('user');
     const bookCollection = client.db('bookship').collection('books');
-    const bookingCollection = client.db('bookship').collection('booking');
+    const orderCollection = client.db('bookship').collection('order');
+    const reviewsCollection = client.db('bookship').collection('reviews');
 
     app.post('/create-payment-intent', async (req, res) => {
-      const booking = req.body;
-      const price = parseInt(booking.price);
+      const order = req.body;
+      const price = parseInt(order.price);
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -245,18 +246,18 @@ async function run() {
       res.json(result);
     });
 
-    // post booking data to database
-    app.post('/booking', async (req, res) => {
-      const booking = req.body;
-      const result = await bookingCollection.insertOne(booking);
+    // post order data to database
+    app.post('/order', async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
       // console.log(result)
       res.json(result);
     });
 
     // need jwt
 
-    // get bookings based on email query and match the email with selleremail
-    app.get('/bookings', async (req, res) => {
+    // get orders based on email query and match the email with selleremail
+    app.get('/orders', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -264,15 +265,15 @@ async function run() {
       //   return res.status(401).send('Unauthorized request');
       // }
       const email = req.query.email;
-      const cursor = bookingCollection.find({ selleremail: email });
-      const bookings = await cursor.toArray();
-      // console.log(bookings)
-      res.send(bookings);
+      const cursor = orderCollection.find({ selleremail: email });
+      const orders = await cursor.toArray();
+      // console.log(orders)
+      res.send(orders);
     });
 
     // need jwt
-    // get bookings based on email query and match the email with buyeremail
-    app.get('/buyerbookings', async (req, res) => {
+    // get orders based on email query and match the email with buyeremail
+    app.get('/buyerorders', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -281,31 +282,31 @@ async function run() {
       // }
 
       const email = req.query.email;
-      const cursor = bookingCollection.find({ email: email });
-      const bookings = await cursor.toArray();
-      // console.log(bookings)
-      res.send(bookings);
+      const cursor = orderCollection.find({ email: email });
+      const orders = await cursor.toArray();
+      // console.log(orders)
+      res.send(orders);
     });
 
-    // get bookings by id
-    app.get('/booking/:id', async (req, res) => {
+    // get orders by id
+    app.get('/order/:id', async (req, res) => {
       const id = req.params.id;
-      const booking = await bookingCollection.findOne({
+      const order = await orderCollection.findOne({
         _id: ObjectId(id),
       });
-      res.send(booking);
+      res.send(order);
     });
 
-    // update booking isPaid status based on id params using patch method
-    app.patch('/booking/:id', async (req, res) => {
+    // update order isPaid status based on id params using patch method
+    app.patch('/order/:id', async (req, res) => {
       const id = req.params.id;
-      const booking = req.body;
-      const result = await bookingCollection.updateOne(
+      const order = req.body;
+      const result = await orderCollection.updateOne(
         {
           _id: ObjectId(id),
         },
         {
-          $set: booking,
+          $set: order,
         },
         {
           upsert: true,
@@ -351,6 +352,52 @@ async function run() {
         { upsert: true }
       );
       res.json(result);
+    });
+
+    // push reviews to database
+    app.post('/addreview', async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      review.id = result.insertedId;
+      console.log(
+        `New review created with the following id: ${result.insertedId}`
+      );
+    });
+
+    // get all reviews
+    // app.get('/reviews', async (req, res) => {
+    //     const query = {}
+    //     const cursor = reviewsCollection.find(query);
+    //     const reviews = await cursor.toArray();
+    //     res.send(reviews);
+    // });
+
+    // get reviews from database based on service id
+    app.get('/reviews/:id', async (req, res) => {
+      const query = { bookId: req.params.id };
+      const cursor = reviewsCollection.find(query);
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+    });
+
+    // delete a review
+    app.delete('/delete/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await reviewsCollection.deleteOne(query);
+      console.log(`Deleted ${result.deletedCount} item.`);
+      res.send(result);
+    });
+
+    // get reviews based on reviewerEmail
+    app.get('/reviews', verifyToken, async (req, res) => {
+      // console.log(req.headers.authorization)
+      const decoded = req.user;
+      console.log(decoded);
+      const query = { reviewerEmail: req.query.email };
+      const cursor = reviewsCollection.find(query);
+      const reviews = await cursor.toArray();
+      res.send(reviews);
     });
   } finally {
   }
