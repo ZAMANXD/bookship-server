@@ -399,6 +399,19 @@ async function run() {
       const reviews = await cursor.toArray();
       res.send(reviews);
     });
+
+    //update a review
+    app.patch('/reviews/:id', async (req, res) => {
+      const query = { bookId: req.params.id };
+      const update = { $set: req.body };
+      const options = { returnOriginal: false };
+      const result = await reviewsCollection.findOneAndUpdate(
+        query,
+        update,
+        options
+      );
+      res.send(result);
+    });
   } finally {
   }
 }
