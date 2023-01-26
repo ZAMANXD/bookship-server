@@ -80,6 +80,19 @@ async function run() {
       res.send(categories);
     });
 
+    // Save user data in database
+    app.post("/saveuser", async (req, res) => {
+      const user = req.body
+      const email = { email: user.email }
+      const exsistUser = await userCollection.findOne(email)
+      if (exsistUser) {
+        res.send({ message: 'user exesting' })
+        return
+      }
+      const result = await userCollection.insertOne(user)
+      res.send(result)
+    })
+
     // upsert user information to user collection
     app.post('/user', async (req, res) => {
       const user = req.body;
@@ -390,7 +403,18 @@ async function run() {
     });
 
     // get reviews based on reviewerEmail
-    app.get('/reviews', verifyToken, async (req, res) => {
+    // app.get('/reviews', verifyToken, async (req, res) => {
+    //   console.log(req.headers.authorization)
+    //   const decoded = req.user;
+    //   console.log(decoded);
+    //   const query = { reviewerEmail: req.query.email };
+    //   const cursor = reviewsCollection.find(query);
+    //   const reviews = await cursor.toArray();
+    //   res.send(reviews);
+    // });
+
+    // get reviews based on reviewerEmail
+    app.get('/reviews', async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
       console.log(decoded);
