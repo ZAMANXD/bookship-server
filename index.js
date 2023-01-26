@@ -17,7 +17,7 @@ app.use(express.json());
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
 const uri = `mongodb+srv://bookship_admin:Ak3z5tDNm3OlXw8G@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
 
-// console.log(uri);
+console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -101,7 +101,6 @@ async function run() {
         { $set: user },
         { upsert: false }
       );
-
       res.json(result);
     });
 
@@ -403,17 +402,6 @@ async function run() {
     });
 
     // get reviews based on reviewerEmail
-    // app.get('/reviews', verifyToken, async (req, res) => {
-    //   console.log(req.headers.authorization)
-    //   const decoded = req.user;
-    //   console.log(decoded);
-    //   const query = { reviewerEmail: req.query.email };
-    //   const cursor = reviewsCollection.find(query);
-    //   const reviews = await cursor.toArray();
-    //   res.send(reviews);
-    // });
-
-    // get reviews based on reviewerEmail
     app.get('/reviews', async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
@@ -422,6 +410,19 @@ async function run() {
       const cursor = reviewsCollection.find(query);
       const reviews = await cursor.toArray();
       res.send(reviews);
+    });
+
+    //update a review
+    app.patch('/reviews/:id', async (req, res) => {
+      const query = { bookId: req.params.id };
+      const update = { $set: req.body };
+      const options = { returnOriginal: false };
+      const result = await reviewsCollection.findOneAndUpdate(
+        query,
+        update,
+        options
+      );
+      res.send(result);
     });
   } finally {
   }
