@@ -45,13 +45,13 @@ const verifyJwt = (req, res, next) => {
 async function run() {
   try {
     // await client.connect();
-    const categoryCollection = client.db('bookship').collection('categories');
-    const userCollection = client.db('bookship').collection('user');
-    const bookCollection = client.db('bookship').collection('books');
-    const orderCollection = client.db('bookship').collection('order');
-    const reviewsCollection = client.db('bookship').collection('reviews');
+    const categoryCollection = client.db("bookship").collection("categories");
+    const userCollection = client.db("bookship").collection("user");
+    const bookCollection = client.db("bookship").collection("books");
+    const orderCollection = client.db("bookship").collection("order");
+    const reviewsCollection = client.db("bookship").collection("reviews");
 
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const order = req.body;
       const price = parseInt(order.price);
       const amount = price * 100;
@@ -80,14 +80,14 @@ async function run() {
       res.send(categories);
     });
 
-    app.post('/categories', async (req, res) => {
+    app.post("/categories", async (req, res) => {
       const category = req.body;
       const result = await categoryCollection.insertOne(category);
       res.json(result);
     });
 
     //delete categories based on id
-    app.delete('/categories/:id', async (req, res) => {
+    app.delete("/categories/:id", async (req, res) => {
       const id = req.params.id;
       const result = await categoryCollection.deleteOne({ _id: ObjectId(id) });
       res.json(result);
@@ -259,7 +259,7 @@ async function run() {
     });
 
     // post order data to database
-    app.post('/order', async (req, res) => {
+    app.post("/order", async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       // console.log(result)
@@ -269,7 +269,7 @@ async function run() {
     // need jwt
 
     // get orders based on email query and match the email with selleremail
-    app.get('/orders', async (req, res) => {
+    app.get("/orders", async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -285,7 +285,7 @@ async function run() {
 
     // need jwt
     // get orders based on email query and match the email with buyeremail
-    app.get('/buyerorders', async (req, res) => {
+    app.get("/buyerorders", async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -301,7 +301,7 @@ async function run() {
     });
 
     // get orders by id
-    app.get('/order/:id', async (req, res) => {
+    app.get("/order/:id", async (req, res) => {
       const id = req.params.id;
       const order = await orderCollection.findOne({
         _id: ObjectId(id),
@@ -310,7 +310,7 @@ async function run() {
     });
 
     // update order isPaid status based on id params using patch method
-    app.patch('/order/:id', async (req, res) => {
+    app.patch("/order/:id", async (req, res) => {
       const id = req.params.id;
       const order = req.body;
       const result = await orderCollection.updateOne(
@@ -367,7 +367,7 @@ async function run() {
     });
 
     // push reviews to database
-    app.post('/addreview', async (req, res) => {
+    app.post("/addreview", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
       review.id = result.insertedId;
@@ -385,7 +385,7 @@ async function run() {
     // });
 
     // get reviews from database based on service id
-    app.get('/reviews/:id', async (req, res) => {
+    app.get("/reviews/:id", async (req, res) => {
       const query = { bookId: req.params.id };
       const cursor = reviewsCollection.find(query);
       const reviews = await cursor.toArray();
@@ -393,7 +393,7 @@ async function run() {
     });
 
     // delete a review
-    app.delete('/delete/:id', async (req, res) => {
+    app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await reviewsCollection.deleteOne(query);
@@ -403,7 +403,7 @@ async function run() {
 
     // get reviews based on reviewerEmail
     // app.get('/reviews', verifyToken, async (req, res) => {
-    app.get('/reviews', async (req, res) => {
+    app.get("/reviews", async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
       console.log(decoded);
@@ -414,13 +414,33 @@ async function run() {
     });
 
     //update a review
-    app.patch('/reviews/:id', async (req, res) => {
-      const query = { bookId: req.params.id };
-      const update = { $set: req.body };
-      const options = { returnOriginal: false };
-      const result = await reviewsCollection.findOneAndUpdate(
-        query,
-        update,
+    // app.patch('/reviews/:id', async (req, res) => {
+    //   const query = { bookId: req.params.id };
+    //   const update = { $set: req.body };
+    //   const options = { returnOriginal: false };
+    //   const result = await reviewsCollection.findOneAndUpdate(
+    //     query,
+    //     update,
+    //     options
+    //   );
+    //   res.send(result);
+    // });
+
+    // update review
+    app.put("/reviews/edit/:id", async (req, res) => {
+      const id = req.params.id;
+      const comment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedComment = {
+        $set: {
+          comment: comment.comment,
+          commentDate: comment.commentDate,
+        },
+      };
+      const result = await reviewsCollection.updateOne(
+        filter,
+        updatedComment,
         options
       );
       res.send(result);
