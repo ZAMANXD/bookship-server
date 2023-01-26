@@ -80,6 +80,18 @@ async function run() {
       res.send(categories);
     });
 
+    // Save user data in database
+    app.post("/saveuser", async (req, res) => {
+      const user = req.body
+      const email = { email: user.email }
+      const exsistUser = await userCollection.findOne(email)
+      if (exsistUser) {
+        res.send({ message: 'user exesting' })
+        return
+      }
+      const result = await userCollection.insertOne(user)
+      res.send(result)
+    })
     app.post("/categories", async (req, res) => {
       const category = req.body;
       const result = await categoryCollection.insertOne(category);
@@ -402,8 +414,7 @@ async function run() {
     });
 
     // get reviews based on reviewerEmail
-    // app.get('/reviews', verifyToken, async (req, res) => {
-    app.get("/reviews", async (req, res) => {
+    app.get('/reviews', async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
       console.log(decoded);
