@@ -480,6 +480,14 @@ async function run() {
       const books = await bookCollection.find(query).toArray();
       res.send(books);
     });
+
+    // get books by author in author page.
+    app.get("/author/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { authorEmail: email };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
   } finally {
   }
 }
