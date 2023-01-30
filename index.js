@@ -473,7 +473,13 @@ async function run() {
       res.send(result);
     });
 
-
+    // get books by author email
+    app.get("/book", async (req, res) => {
+      const email = req.query.email;
+      const query = { authorEmail: email };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
   } finally {
   }
 }
