@@ -50,6 +50,9 @@ async function run() {
     const bookCollection = client.db("bookship").collection("books");
     const orderCollection = client.db("bookship").collection("order");
     const reviewsCollection = client.db("bookship").collection("reviews");
+    const publicationCollection = client
+      .db("bookship")
+      .collection("publications");
 
     app.post("/create-payment-intent", async (req, res) => {
       const order = req.body;
@@ -482,11 +485,25 @@ async function run() {
     });
 
     // get books by author in author page.
-    app.get("/author/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { authorEmail: email };
+    app.get("/author/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { authorName: name };
       const books = await bookCollection.find(query).toArray();
       res.send(books);
+    });
+
+    // get all categories
+    app.get("/categories", async (req, res) => {
+      const query = {};
+      const categories = await categoryCollection.find(query).toArray();
+      res.send(categories);
+    });
+
+    // get all publications
+    app.get("/publications", async (req, res) => {
+      const query = {};
+      const publications = await publicationCollection.find(query).toArray();
+      res.send(publications);
     });
   } finally {
   }
