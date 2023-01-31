@@ -500,6 +500,14 @@ async function run() {
       res.send(books);
     });
 
+    // get books by publication in publication page
+    app.get("/publications/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { publication: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
     // get all categories
     app.get("/categories", async (req, res) => {
       const query = {};
