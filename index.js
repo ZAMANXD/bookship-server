@@ -492,6 +492,14 @@ async function run() {
       res.send(books);
     });
 
+    // get books by category in category page.
+    app.get("/categories/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { category: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
     // get all categories
     app.get("/categories", async (req, res) => {
       const query = {};
