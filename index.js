@@ -92,9 +92,9 @@ async function run() {
         res.send({ message: "user exesting" });
         return;
       }
-      const result = await userCollection.insertOne(user)
-      res.send(result)
-    })
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
     // admin chake in db
     app.get("/users/admin/:email", async (req, res) => {
@@ -408,6 +408,7 @@ async function run() {
       console.log(
         `New review created with the following id: ${result.insertedId}`
       );
+      res.send(result);
     });
 
     // get all reviews
