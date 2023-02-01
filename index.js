@@ -50,6 +50,9 @@ async function run() {
     const bookCollection = client.db("bookship").collection("books");
     const orderCollection = client.db("bookship").collection("order");
     const reviewsCollection = client.db("bookship").collection("reviews");
+    const publicationCollection = client
+      .db("bookship")
+      .collection("publications");
 
     app.post("/create-payment-intent", async (req, res) => {
       const order = req.body;
@@ -82,12 +85,12 @@ async function run() {
 
     // Save user data in database
     app.post("/saveuser", async (req, res) => {
-      const user = req.body
-      const email = { email: user.email }
-      const exsistUser = await userCollection.findOne(email)
+      const user = req.body;
+      const email = { email: user.email };
+      const exsistUser = await userCollection.findOne(email);
       if (exsistUser) {
-        res.send({ message: 'user exesting' })
-        return
+        res.send({ message: "user exesting" });
+        return;
       }
       const result = await userCollection.insertOne(user)
       res.send(result)
@@ -433,7 +436,7 @@ async function run() {
     });
 
     // get reviews based on reviewerEmail
-    app.get('/reviews', async (req, res) => {
+    app.get("/reviews", async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
       console.log(decoded);
@@ -474,6 +477,52 @@ async function run() {
         options
       );
       res.send(result);
+    });
+
+    // get specific categories and publications
+    app.get("/specific-categories", async (req, res) => {
+      const query = {};
+      const projection = {
+        category: 1,
+        publication: 1,
+        authorName: 1,
+        authorEmail: 1,
+      };
+      const result = await bookCollection
+        .find(query)
+        .project(projection)
+        .toArray();
+      res.send(result);
+    });
+
+    // get books by author email
+    app.get("/book", async (req, res) => {
+      const email = req.query.email;
+      const query = { authorEmail: email };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get books by author in author page.
+    app.get("/author/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { authorName: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get all categories
+    app.get("/categories", async (req, res) => {
+      const query = {};
+      const categories = await categoryCollection.find(query).toArray();
+      res.send(categories);
+    });
+
+    // get all publications
+    app.get("/publications", async (req, res) => {
+      const query = {};
+      const publications = await publicationCollection.find(query).toArray();
+      res.send(publications);
     });
   } finally {
   }
