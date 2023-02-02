@@ -96,7 +96,7 @@ async function run() {
       res.send(result);
     });
 
-    // admin chake in db
+    // admin check in db
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -104,7 +104,7 @@ async function run() {
       res.send({ isAdmin: user?.role === "admin" });
     });
 
-    // seller chake in db
+    // seller check in db
     app.get("/users/seller/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
