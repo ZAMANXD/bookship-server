@@ -408,6 +408,7 @@ async function run() {
       console.log(
         `New review created with the following id: ${result.insertedId}`
       );
+      res.send(result);
     });
 
     // get all reviews
@@ -507,6 +508,22 @@ async function run() {
     app.get('/author/:name', async (req, res) => {
       const name = req.params.name;
       const query = { authorName: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get books by category in category page.
+    app.get("/categories/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { category: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get books by publication in publication page
+    app.get("/publications/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { publication: name };
       const books = await bookCollection.find(query).toArray();
       res.send(books);
     });
