@@ -96,23 +96,23 @@ async function run() {
       res.send(result);
     });
 
-    // // admin chake in db
-    // app.get("/users/admin/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email };
-    //   const user = await userCollection.findOne(query);
-    //   res.send({ isAdmin: user?.role === "admin" });
-    // });
+    // admin chake in db
+    app.get("/users/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      res.send({ isAdmin: user?.role === "admin" });
+    });
 
-    // // seller chake in db
-    // app.get("/users/seller/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email };
-    //   const user = await userCollection.findOne(query);
-    //   res.send({
-    //     isSeller: user?.role === "seller",
-    //   });
-    // });
+    // seller chake in db
+    app.get("/users/seller/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      res.send({
+        isSeller: user?.role === "seller",
+      });
+    });
 
     app.post('/categories', async (req, res) => {
       const category = req.body;
