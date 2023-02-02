@@ -79,6 +79,7 @@ async function run() {
     app.get('/categories', async (req, res) => {
       const cursor = categoryCollection.find({});
       const categories = await cursor.toArray();
+      // console.log(categories)
       res.send(categories);
     });
 
@@ -143,6 +144,7 @@ async function run() {
       const user = await userCollection.findOne({
         email: email,
       });
+      // console.log(user);
       res.send(user);
     });
 
@@ -161,6 +163,7 @@ async function run() {
     app.post('/book', async (req, res) => {
       const book = req.body;
       const result = await bookCollection.insertOne(book);
+      // console.log(result)
       res.json(result);
     });
 
@@ -175,6 +178,7 @@ async function run() {
     app.get('/books', async (req, res) => {
       const cursor = bookCollection.find({});
       const books = await cursor.toArray();
+      // console.log(books)
       res.send(books);
     });
 
@@ -182,6 +186,7 @@ async function run() {
     app.get('/advertisedBooks', async (req, res) => {
       const cursor = bookCollection.find({ isAdvertise: 'yes' });
       const books = await cursor.toArray();
+      // console.log(books)
       res.send(books.reverse());
     });
 
@@ -189,6 +194,7 @@ async function run() {
     app.get('/recents', async (req, res) => {
       const cursor = bookCollection.find({}).sort({ _id: -1 }).limit(3);
       const books = await cursor.toArray();
+      // console.log(books)
       res.send(books);
     });
 
@@ -202,11 +208,13 @@ async function run() {
     });
 
     // need jwt
+
     // filter books by seller email and skip the books which have the same email as the query
     app.get('/booksbyseller', async (req, res) => {
       const email = req.query.email;
       const cursor = bookCollection.find({ selleremail: { $ne: email } });
       const books = await cursor.toArray();
+      // console.log(books)
       res.send(books);
     });
 
@@ -214,10 +222,18 @@ async function run() {
 
     // get books for a specific seller by seller email
     app.get('/booksforseller', async (req, res) => {
+      // const decoded = req.decoded;
+      // console.log('books for seller', decoded);
+
+      // if (decoded.email !== req.query.email) {
+      //   return res.status(401).send('Unauthorized request');
+      // }
+
       console.log(req.headers.authorization);
       const email = req.query.email;
       const cursor = bookCollection.find({ selleremail: email });
       const books = await cursor.toArray();
+      // console.log(books)
       res.send(books);
     });
 
@@ -280,24 +296,41 @@ async function run() {
     app.post('/order', async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
+      // console.log(result)
       res.json(result);
     });
 
     // need jwt
+
     // get orders based on email query and match the email with selleremail
     app.get('/orders', async (req, res) => {
+      // const decoded = req.decoded;
+      // console.log('books for seller', decoded);
+
+      // if (decoded.email !== req.query.email) {
+      //   return res.status(401).send('Unauthorized request');
+      // }
       const email = req.query.email;
       const cursor = orderCollection.find({ selleremail: email });
       const orders = await cursor.toArray();
+      // console.log(orders)
       res.send(orders);
     });
 
     // need jwt
     // get orders based on email query and match the email with buyeremail
     app.get('/buyerorders', async (req, res) => {
+      // const decoded = req.decoded;
+      // console.log('books for seller', decoded);
+
+      // if (decoded.email !== req.query.email) {
+      //   return res.status(401).send('Unauthorized request');
+      // }
+
       const email = req.query.email;
       const cursor = orderCollection.find({ email: email });
       const orders = await cursor.toArray();
+      // console.log(orders)
       res.send(orders);
     });
 
@@ -375,7 +408,16 @@ async function run() {
       console.log(
         `New review created with the following id: ${result.insertedId}`
       );
+      res.send(result);
     });
+
+    // get all reviews
+    // app.get('/reviews', async (req, res) => {
+    //     const query = {}
+    //     const cursor = reviewsCollection.find(query);
+    //     const reviews = await cursor.toArray();
+    //     res.send(reviews);
+    // });
 
     // get reviews from database based on service id
     app.get('/reviews/:id', async (req, res) => {
@@ -404,6 +446,19 @@ async function run() {
       const reviews = await cursor.toArray();
       res.send(reviews);
     });
+
+    //update a review
+    // app.patch('/reviews/:id', async (req, res) => {
+    //   const query = { bookId: req.params.id };
+    //   const update = { $set: req.body };
+    //   const options = { returnOriginal: false };
+    //   const result = await reviewsCollection.findOneAndUpdate(
+    //     query,
+    //     update,
+    //     options
+    //   );
+    //   res.send(result);
+    // });
 
     // update review
     app.put('/reviews/edit/:id', async (req, res) => {
@@ -453,6 +508,22 @@ async function run() {
     app.get('/author/:name', async (req, res) => {
       const name = req.params.name;
       const query = { authorName: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get books by category in category page.
+    app.get('/categories/:name', async (req, res) => {
+      const name = req.params.name;
+      const query = { category: name };
+      const books = await bookCollection.find(query).toArray();
+      res.send(books);
+    });
+
+    // get books by publication in publication page
+    app.get('/publications/:name', async (req, res) => {
+      const name = req.params.name;
+      const query = { publication: name };
       const books = await bookCollection.find(query).toArray();
       res.send(books);
     });
