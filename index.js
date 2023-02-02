@@ -1,11 +1,11 @@
-const express = require("express");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const cors = require("cors");
+const express = require('express');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const cors = require('cors');
 // const jwt = require('jsonwebtoken');
 
-require("dotenv").config();
+require('dotenv').config();
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.port || 5000;
@@ -30,12 +30,12 @@ const client = new MongoClient(uri, {
 const verifyJwt = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(401).send("Unauthorized request");
+    return res.status(401).send('Unauthorized request');
   }
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
     if (err) {
-      return res.status(401).send("Unauthorized request");
+      return res.status(401).send('Unauthorized request');
     }
     req.decoded = decoded;
     next();
@@ -45,30 +45,30 @@ const verifyJwt = (req, res, next) => {
 async function run() {
   try {
     // await client.connect();
-    const categoryCollection = client.db("bookship").collection("categories");
-    const userCollection = client.db("bookship").collection("user");
-    const bookCollection = client.db("bookship").collection("books");
-    const orderCollection = client.db("bookship").collection("order");
-    const reviewsCollection = client.db("bookship").collection("reviews");
+    const categoryCollection = client.db('bookship').collection('categories');
+    const userCollection = client.db('bookship').collection('user');
+    const bookCollection = client.db('bookship').collection('books');
+    const orderCollection = client.db('bookship').collection('order');
+    const reviewsCollection = client.db('bookship').collection('reviews');
     const publicationCollection = client
-      .db("bookship")
-      .collection("publications");
+      .db('bookship')
+      .collection('publications');
 
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
       const price = parseInt(order.price);
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: "usd",
-        payment_method_types: ["card"],
+        currency: 'usd',
+        payment_method_types: ['card'],
       });
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
     });
 
-    app.post("/jwt", (req, res) => {
+    app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
       res.send({ token });
@@ -76,7 +76,7 @@ async function run() {
     });
 
     // get all categories from category collection
-    app.get("/categories", async (req, res) => {
+    app.get('/categories', async (req, res) => {
       const cursor = categoryCollection.find({});
       const categories = await cursor.toArray();
       // console.log(categories)
@@ -84,51 +84,51 @@ async function run() {
     });
 
     // Save user data in database
-    app.post("/saveuser", async (req, res) => {
+    app.post('/saveuser', async (req, res) => {
       const user = req.body;
       const email = { email: user.email };
       const exsistUser = await userCollection.findOne(email);
       if (exsistUser) {
-        res.send({ message: "user exesting" });
+        res.send({ message: 'user exesting' });
         return;
       }
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
 
-    // // admin chake in db
-    // app.get("/users/admin/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email };
-    //   const user = await userCollection.findOne(query);
-    //   res.send({ isAdmin: user?.role === "admin" });
-    // });
+    // admin chake in db
+    app.get("/users/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      res.send({ isAdmin: user?.role === "admin" });
+    });
 
-    // // seller chake in db
-    // app.get("/users/seller/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email: email };
-    //   const user = await userCollection.findOne(query);
-    //   res.send({
-    //     isSeller: user?.role === "seller",
-    //   });
-    // });
+    // seller chake in db
+    app.get("/users/seller/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      res.send({
+        isSeller: user?.role === "seller",
+      });
+    });
 
-    app.post("/categories", async (req, res) => {
+    app.post('/categories', async (req, res) => {
       const category = req.body;
       const result = await categoryCollection.insertOne(category);
       res.json(result);
     });
 
     //delete categories based on id
-    app.delete("/categories/:id", async (req, res) => {
+    app.delete('/categories/:id', async (req, res) => {
       const id = req.params.id;
       const result = await categoryCollection.deleteOne({ _id: ObjectId(id) });
       res.json(result);
     });
 
     // upsert user information to user collection
-    app.post("/user", async (req, res) => {
+    app.post('/user', async (req, res) => {
       const user = req.body;
       const result = await userCollection.updateOne(
         { email: user.email },
@@ -139,7 +139,7 @@ async function run() {
     });
 
     // get user role from userCollection based on email query
-    app.get("/user", async (req, res) => {
+    app.get('/user', async (req, res) => {
       const email = req.query.email;
       const user = await userCollection.findOne({
         email: email,
@@ -149,7 +149,7 @@ async function run() {
     });
 
     // patch user to update user role and email on social login
-    app.patch("/user", async (req, res) => {
+    app.patch('/user', async (req, res) => {
       const user = req.body;
       const result = await userCollection.updateOne(
         { email: user.email },
@@ -160,7 +160,7 @@ async function run() {
     });
 
     // post new book to book collection
-    app.post("/book", async (req, res) => {
+    app.post('/book', async (req, res) => {
       const book = req.body;
       const result = await bookCollection.insertOne(book);
       // console.log(result)
@@ -168,14 +168,14 @@ async function run() {
     });
 
     // get book by id
-    app.get("/book/:id", async (req, res) => {
+    app.get('/book/:id', async (req, res) => {
       const id = req.params.id;
       const book = await bookCollection.findOne({ _id: ObjectId(id) });
       res.send(book);
     });
 
     // get all books from book collection
-    app.get("/books", async (req, res) => {
+    app.get('/books', async (req, res) => {
       const cursor = bookCollection.find({});
       const books = await cursor.toArray();
       // console.log(books)
@@ -183,15 +183,15 @@ async function run() {
     });
 
     // get all the books which have isAdvertised = "yes"
-    app.get("/advertisedBooks", async (req, res) => {
-      const cursor = bookCollection.find({ isAdvertise: "yes" });
+    app.get('/advertisedBooks', async (req, res) => {
+      const cursor = bookCollection.find({ isAdvertise: 'yes' });
       const books = await cursor.toArray();
       // console.log(books)
       res.send(books.reverse());
     });
 
     // get lastly added 3 books from book collection
-    app.get("/recents", async (req, res) => {
+    app.get('/recents', async (req, res) => {
       const cursor = bookCollection.find({}).sort({ _id: -1 }).limit(3);
       const books = await cursor.toArray();
       // console.log(books)
@@ -199,7 +199,7 @@ async function run() {
     });
 
     // get the category title based on id params
-    app.get("/category/:id", async (req, res) => {
+    app.get('/category/:id', async (req, res) => {
       const id = req.params.id;
       const category = await categoryCollection.findOne({
         _id: ObjectId(id),
@@ -210,7 +210,7 @@ async function run() {
     // need jwt
 
     // filter books by seller email and skip the books which have the same email as the query
-    app.get("/booksbyseller", async (req, res) => {
+    app.get('/booksbyseller', async (req, res) => {
       const email = req.query.email;
       const cursor = bookCollection.find({ selleremail: { $ne: email } });
       const books = await cursor.toArray();
@@ -221,7 +221,7 @@ async function run() {
     // need jwt
 
     // get books for a specific seller by seller email
-    app.get("/booksforseller", async (req, res) => {
+    app.get('/booksforseller', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -238,7 +238,7 @@ async function run() {
     });
 
     // update book status based on id params using patch method
-    app.patch("/books/:id", async (req, res) => {
+    app.patch('/books/:id', async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -250,7 +250,7 @@ async function run() {
     });
 
     // add reported: true to book collection based on id params
-    app.patch("/report/:id", async (req, res) => {
+    app.patch('/report/:id', async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -262,14 +262,14 @@ async function run() {
     });
 
     // delete book based on id params
-    app.delete("/books/:id", async (req, res) => {
+    app.delete('/books/:id', async (req, res) => {
       const id = req.params.id;
       const result = await bookCollection.deleteOne({ _id: ObjectId(id) });
       res.json(result);
     });
 
     // update isAdvertise status based on id params using patch method
-    app.patch("/advertise/:id", async (req, res) => {
+    app.patch('/advertise/:id', async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -281,7 +281,7 @@ async function run() {
     });
 
     // update price based on id params using patch method
-    app.patch("/updateprice/:id", async (req, res) => {
+    app.patch('/updateprice/:id', async (req, res) => {
       const id = req.params.id;
       const book = req.body;
       const result = await bookCollection.updateOne(
@@ -293,7 +293,7 @@ async function run() {
     });
 
     // post order data to database
-    app.post("/order", async (req, res) => {
+    app.post('/order', async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       // console.log(result)
@@ -303,7 +303,7 @@ async function run() {
     // need jwt
 
     // get orders based on email query and match the email with selleremail
-    app.get("/orders", async (req, res) => {
+    app.get('/orders', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -319,7 +319,7 @@ async function run() {
 
     // need jwt
     // get orders based on email query and match the email with buyeremail
-    app.get("/buyerorders", async (req, res) => {
+    app.get('/buyerorders', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
 
@@ -335,7 +335,7 @@ async function run() {
     });
 
     // get orders by id
-    app.get("/order/:id", async (req, res) => {
+    app.get('/order/:id', async (req, res) => {
       const id = req.params.id;
       const order = await orderCollection.findOne({
         _id: ObjectId(id),
@@ -344,7 +344,7 @@ async function run() {
     });
 
     // update order isPaid status based on id params using patch method
-    app.patch("/order/:id", async (req, res) => {
+    app.patch('/order/:id', async (req, res) => {
       const id = req.params.id;
       const order = req.body;
       const result = await orderCollection.updateOne(
@@ -362,7 +362,7 @@ async function run() {
     });
 
     // get all the users
-    app.get("/users", async (req, res) => {
+    app.get('/users', async (req, res) => {
       const cursor = userCollection.find({});
       const users = await cursor.toArray();
       // console.log(users)
@@ -370,14 +370,14 @@ async function run() {
     });
 
     // delete user by email query
-    app.delete("/users", async (req, res) => {
+    app.delete('/users', async (req, res) => {
       const email = req.query.email;
       const result = await userCollection.deleteOne({ email: email });
       res.json(result);
     });
 
     // update user role by email query
-    app.patch("/users", async (req, res) => {
+    app.patch('/users', async (req, res) => {
       const email = req.query.email;
       const user = req.body;
       const result = await userCollection.updateOne(
@@ -389,7 +389,7 @@ async function run() {
     });
 
     // verify seller by email query
-    app.patch("/verify", async (req, res) => {
+    app.patch('/verify', async (req, res) => {
       const email = req.query.email;
       const user = req.body;
       const result = await userCollection.updateOne(
@@ -401,7 +401,7 @@ async function run() {
     });
 
     // push reviews to database
-    app.post("/addreview", async (req, res) => {
+    app.post('/addreview', async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
       review.id = result.insertedId;
@@ -420,7 +420,7 @@ async function run() {
     // });
 
     // get reviews from database based on service id
-    app.get("/reviews/:id", async (req, res) => {
+    app.get('/reviews/:id', async (req, res) => {
       const query = { bookId: req.params.id };
       const cursor = reviewsCollection.find(query);
       const reviews = await cursor.toArray();
@@ -428,7 +428,7 @@ async function run() {
     });
 
     // delete a review
-    app.delete("/delete/:id", async (req, res) => {
+    app.delete('/delete/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await reviewsCollection.deleteOne(query);
@@ -437,7 +437,7 @@ async function run() {
     });
 
     // get reviews based on reviewerEmail
-    app.get("/reviews", async (req, res) => {
+    app.get('/reviews', async (req, res) => {
       // console.log(req.headers.authorization)
       const decoded = req.user;
       console.log(decoded);
@@ -461,7 +461,7 @@ async function run() {
     // });
 
     // update review
-    app.put("/reviews/edit/:id", async (req, res) => {
+    app.put('/reviews/edit/:id', async (req, res) => {
       const id = req.params.id;
       const comment = req.body;
       const filter = { _id: ObjectId(id) };
@@ -481,7 +481,7 @@ async function run() {
     });
 
     // get specific categories and publications
-    app.get("/specific-categories", async (req, res) => {
+    app.get('/specific-categories', async (req, res) => {
       const query = {};
       const projection = {
         category: 1,
@@ -497,7 +497,7 @@ async function run() {
     });
 
     // get books by author email
-    app.get("/book", async (req, res) => {
+    app.get('/book', async (req, res) => {
       const email = req.query.email;
       const query = { authorEmail: email };
       const books = await bookCollection.find(query).toArray();
@@ -505,7 +505,7 @@ async function run() {
     });
 
     // get books by author in author page.
-    app.get("/author/:name", async (req, res) => {
+    app.get('/author/:name', async (req, res) => {
       const name = req.params.name;
       const query = { authorName: name };
       const books = await bookCollection.find(query).toArray();
@@ -529,14 +529,14 @@ async function run() {
     });
 
     // get all categories
-    app.get("/categories", async (req, res) => {
+    app.get('/categories', async (req, res) => {
       const query = {};
       const categories = await categoryCollection.find(query).toArray();
       res.send(categories);
     });
 
     // get all publications
-    app.get("/publications", async (req, res) => {
+    app.get('/publications', async (req, res) => {
       const query = {};
       const publications = await publicationCollection.find(query).toArray();
       res.send(publications);
@@ -547,8 +547,8 @@ async function run() {
 
 run().catch(console.dir);
 
-app.get("/", (req, res) => {
-  res.send("Bookship server running nonstop");
+app.get('/', (req, res) => {
+  res.send('Bookship server running nonstop');
 });
 
 app.listen(port, () => {
