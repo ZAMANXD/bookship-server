@@ -5,7 +5,10 @@ const cors = require('cors');
 
 require('dotenv').config();
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(
+  'sk_test_51HLlbcEAY8E8Wcd69pb0LdtCn6szOyXFE6TxYJWFAVrUdHTm7xTjnh7vnFIOUeqgGieKyX5NNHvQrMnebcDR2teK00diGjSXdG'
+);
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.port || 5000;
