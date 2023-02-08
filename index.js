@@ -56,6 +56,7 @@ async function run() {
     const publicationCollection = client
       .db('bookship')
       .collection('publications');
+    const paymentsCollection = client.db('bookship').collection('payments');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -69,6 +70,21 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
+    });
+
+    app.post('/payments', async (req, response) => {
+      const payment = req.body;
+      const result = await paymentsCollection.insertOne(payment);
+      const id = payment.orderId;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const updatedResult = await orderCollection.updateOne(filter, updatedDoc);
+      res.send(result);
     });
 
     app.post('/jwt', (req, res) => {
@@ -186,7 +202,7 @@ async function run() {
     });
 
     // get all the books which have isAdvertised = "yes"
-    app.get('/advertisedBooks', async (req, res) => {
+    app.get('/advertisedbooks', async (req, res) => {
       const cursor = bookCollection.find({ isAdvertise: 'yes' });
       const books = await cursor.toArray();
       // console.log(books)
