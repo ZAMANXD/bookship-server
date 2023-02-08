@@ -5,10 +5,7 @@ const cors = require('cors');
 
 require('dotenv').config();
 
-const stripe = require('stripe')(
-  'sk_test_51HLlbcEAY8E8Wcd69pb0LdtCn6szOyXFE6TxYJWFAVrUdHTm7xTjnh7vnFIOUeqgGieKyX5NNHvQrMnebcDR2teK00diGjSXdG'
-);
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.port || 5000;
@@ -56,7 +53,6 @@ async function run() {
     const publicationCollection = client
       .db('bookship')
       .collection('publications');
-    const paymentsCollection = client.db('bookship').collection('payments');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -70,21 +66,6 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
-    });
-
-    app.post('/payments', async (req, response) => {
-      const payment = req.body;
-      const result = await paymentsCollection.insertOne(payment);
-      const id = payment.orderId;
-      const filter = { _id: ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          paid: true,
-          transactionId: payment.transactionId,
-        },
-      };
-      const updatedResult = await orderCollection.updateOne(filter, updatedDoc);
-      res.send(result);
     });
 
     app.post('/jwt', (req, res) => {
@@ -202,7 +183,7 @@ async function run() {
     });
 
     // get all the books which have isAdvertised = "yes"
-    app.get('/advertisedbooks', async (req, res) => {
+    app.get('/advertisedBooks', async (req, res) => {
       const cursor = bookCollection.find({ isAdvertise: 'yes' });
       const books = await cursor.toArray();
       // console.log(books)
@@ -559,6 +540,17 @@ async function run() {
       const query = {};
       const publications = await publicationCollection.find(query).toArray();
       res.send(publications);
+    });
+
+    // books (low to high)
+    app.get('/booksprice', async (req, res) => {
+      const value = req.query.value;
+      const query = {};
+      const result = await bookCollection
+        .find(query)
+        .sort({ discountedPrice: value })
+        .toArray();
+      res.send(result);
     });
   } finally {
   }
