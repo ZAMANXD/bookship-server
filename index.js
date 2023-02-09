@@ -151,11 +151,16 @@ async function run() {
     // patch user to update user role and email on social login
     app.patch('/user', async (req, res) => {
       const user = req.body;
-      const result = await userCollection.updateOne(
-        { email: user.email },
-        { $set: user },
-        { upsert: true }
-      );
+      const query = {email : user.email}
+      const updateDoc = {
+        $set: {
+          name :user.name,
+          phone:user.phone,
+          role :user.role
+        },
+      };
+      console.log(user,query);
+      const result = await userCollection.updateOne(query,updateDoc);
       res.json(result);
     });
 
