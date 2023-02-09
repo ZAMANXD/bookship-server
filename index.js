@@ -17,7 +17,7 @@ app.use(express.json());
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
 const uri = `mongodb+srv://bookship_admin:Ak3z5tDNm3OlXw8G@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
 
-console.log(uri);
+// console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -114,10 +114,21 @@ async function run() {
       });
     });
 
-    app.post("/categories", async (req, res) => {
+    app.put("/categories", async (req, res) => {
       const category = req.body;
-      const result = await categoryCollection.insertOne(category);
-      res.json(result);
+      const filter = { category: category };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          category,
+        },
+      };
+      const result = await categoryCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
     });
 
     //delete categories based on id
@@ -563,5 +574,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`The server listening on ${port}`);
 });
