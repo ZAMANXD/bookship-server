@@ -5,7 +5,9 @@ const cors = require('cors');
 
 require('dotenv').config();
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(
+  'sk_test_51HLlbcEAY8E8Wcd69pb0LdtCn6szOyXFE6TxYJWFAVrUdHTm7xTjnh7vnFIOUeqgGieKyX5NNHvQrMnebcDR2teK00diGjSXdG'
+);
 
 const app = express();
 const port = process.env.port || 5000;
@@ -23,6 +25,12 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+// SendGrid config
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(
+  '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'
+);
 
 // console.log(uri)
 
@@ -53,6 +61,7 @@ async function run() {
     const publicationCollection = client
       .db('bookship')
       .collection('publications');
+    const subscriberCollection = client.db('bookship').collection('subscriber');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -74,6 +83,42 @@ async function run() {
       res.send({ token });
       console.log(user);
     });
+
+    app.post('/subscribe', async (req, res) => {
+      const email = req.body.email;
+
+      try {
+        const result = await subscriberCollection.insertOne({ email: email });
+        console.log(result);
+
+        await sendEmail(
+          email,
+          'Welcome to our newsletter!',
+          'Thank you for subscribing to our newsletter!'
+        );
+
+        res.status(200).send({ message: 'Subscription successful!' });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Something went wrong' });
+      }
+    });
+
+    const sendEmail = async (to, subject, text) => {
+      const msg = {
+        to,
+        from: 'contact@zamans-lab.com', // Replace with your sender email
+        subject,
+        text,
+      };
+
+      try {
+        await sgMail.send(msg);
+        console.log('Email sent successfully!');
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
     // get all categories from category collection
     app.get('/categories', async (req, res) => {
@@ -113,7 +158,7 @@ async function run() {
         isSeller: user?.role === 'seller',
       });
     });
-    app.put("/categories", async (req, res) => {
+    app.put('/categories', async (req, res) => {
       const category = req.body;
       const filter = { category: category };
       const options = { upsert: true };
@@ -161,16 +206,16 @@ async function run() {
     // patch user to update user role and email on social login
     app.patch('/user', async (req, res) => {
       const user = req.body;
-      const query = {email : user.email}
+      const query = { email: user.email };
       const updateDoc = {
         $set: {
-          name :user.name,
-          phone:user.phone,
-          role :user.role
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
         },
       };
-      console.log(user,query);
-      const result = await userCollection.updateOne(query,updateDoc);
+      console.log(user, query);
+      const result = await userCollection.updateOne(query, updateDoc);
       res.json(result);
     });
 
