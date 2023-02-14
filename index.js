@@ -1,10 +1,8 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const cors = require('cors');
 // const jwt = require('jsonwebtoken');
 
 require('dotenv').config();
-
+const cors = require('cors');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -14,15 +12,20 @@ const port = process.env.port || 5000;
 app.use(cors());
 app.use(express.json());
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
-const uri = `mongodb+srv://bookship_admin:Ak3z5tDNm3OlXw8G@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
 
 // console.log(uri);
+
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+// SendGrid config
+// const sgMail = require('@sendgrid/mail');
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // console.log(uri)
 
@@ -53,6 +56,7 @@ async function run() {
     const publicationCollection = client
       .db('bookship')
       .collection('publications');
+    const subscriberCollection = client.db('bookship').collection('subscriber');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -74,6 +78,42 @@ async function run() {
       res.send({ token });
       console.log(user);
     });
+
+    app.post('/subscribe', async (req, res) => {
+      const email = req.body.email;
+
+      try {
+        const result = await subscriberCollection.insertOne({ email: email });
+        console.log(result);
+
+        await sendEmail(
+          email,
+          'Welcome to our newsletter!',
+          'Thank you for subscribing to our newsletter!'
+        );
+
+        res.status(200).send({ message: 'Subscription successful!' });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Something went wrong' });
+      }
+    });
+
+    const sendEmail = async (to, subject, text) => {
+      const msg = {
+        to,
+        from: 'contact@zamans-lab.com', // Replace with your sender email
+        subject,
+        text,
+      };
+
+      try {
+        await sgMail.send(msg);
+        console.log('Email sent successfully!');
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
     // get all categories from category collection
     app.get('/categories', async (req, res) => {
@@ -113,7 +153,7 @@ async function run() {
         isSeller: user?.role === 'seller',
       });
     });
-    app.put("/categories", async (req, res) => {
+    app.put('/categories', async (req, res) => {
       const category = req.body;
       const filter = { category: category };
       const options = { upsert: true };
@@ -161,16 +201,16 @@ async function run() {
     // patch user to update user role and email on social login
     app.patch('/user', async (req, res) => {
       const user = req.body;
-      const query = {email : user.email}
+      const query = { email: user.email };
       const updateDoc = {
         $set: {
-          name :user.name,
-          phone:user.phone,
-          role :user.role
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
         },
       };
-      console.log(user,query);
-      const result = await userCollection.updateOne(query,updateDoc);
+      console.log(user, query);
+      const result = await userCollection.updateOne(query, updateDoc);
       res.json(result);
     });
 
