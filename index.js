@@ -1,13 +1,9 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const cors = require('cors');
 // const jwt = require('jsonwebtoken');
 
 require('dotenv').config();
-
-const stripe = require('stripe')(
-  'sk_test_51HLlbcEAY8E8Wcd69pb0LdtCn6szOyXFE6TxYJWFAVrUdHTm7xTjnh7vnFIOUeqgGieKyX5NNHvQrMnebcDR2teK00diGjSXdG'
-);
+const cors = require('cors');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.port || 5000;
@@ -16,10 +12,11 @@ const port = process.env.port || 5000;
 app.use(cors());
 app.use(express.json());
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t03zmwp.mongodb.net/?retryWrites=true&w=majority`;
-const uri = `mongodb+srv://bookship_admin:Ak3z5tDNm3OlXw8G@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zbzm9lw.mongodb.net/?retryWrites=true&w=majority`;
 
 // console.log(uri);
+
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -27,10 +24,8 @@ const client = new MongoClient(uri, {
 });
 
 // SendGrid config
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(
-  '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'
-);
+// const sgMail = require('@sendgrid/mail');
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // console.log(uri)
 
