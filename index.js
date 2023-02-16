@@ -629,7 +629,7 @@ async function run() {
     // get to favoruite
     app.get("/favorurite/:email",async(req,res)=>{
       const email = req.params.email;
-      console.log(email);
+      // console.log(email);
       const result = await favoruriteCollection.find({userEmail: email}).toArray();
       res.send(result)
     })
