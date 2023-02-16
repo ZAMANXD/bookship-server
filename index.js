@@ -57,6 +57,7 @@ async function run() {
       .db('bookship')
       .collection('publications');
     const subscriberCollection = client.db('bookship').collection('subscriber');
+    const favoruriteCollection = client.db('bookship').collection('favorurite');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -602,12 +603,37 @@ async function run() {
     app.get('/booksprice', async (req, res) => {
       const value = req.query.value;
       const query = {};
-      const result = await bookCollection
+      const result= await bookCollection
         .find(query)
         .sort({ discountedPrice: value })
         .toArray();
       res.send(result);
     });
+
+    // Add to favoruite 
+    app.put('/favorurite',async(req,res)=>{
+      const favorurite = req.body; 
+      const query ={_id:favorurite._id}
+      // console.log(favorurite);
+      // console.log(query);
+      const exesting = await favoruriteCollection.findOne(query);
+      if(exesting){
+        res.send({message:"This is already existing"})
+      }
+      else{
+        const result = await favoruriteCollection.insertOne(favorurite)
+      res.send(result)
+      }
+    })
+
+    // get to favoruite
+    app.get("/favorurite/:email",async(req,res)=>{
+      const email = req.params.email;
+      // console.log(email);
+      const result = await favoruriteCollection.find({userEmail: email}).toArray();
+      res.send(result)
+    })
+
   } finally {
   }
 }
