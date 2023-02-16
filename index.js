@@ -207,6 +207,7 @@ async function run() {
           name: user.name,
           phone: user.phone,
           role: user.role,
+          address:user.address,
         },
       };
       console.log(user, query);
