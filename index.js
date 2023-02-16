@@ -169,7 +169,7 @@ async function run() {
           role :user.role
         },
       };
-      console.log(user,query);
+      // console.log(user,query);
       const result = await userCollection.updateOne(query,updateDoc);
       res.json(result);
     });
