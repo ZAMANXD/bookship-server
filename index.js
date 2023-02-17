@@ -3,6 +3,8 @@ const express = require('express');
 
 require('dotenv').config();
 const cors = require('cors');
+const nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -23,10 +25,52 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-// SendGrid config
+// // SendGrid config
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+function sendOrderEmail(_id, quantity) {
+  const { email } = order;
+
+  // This is your API key that you retrieve from www.mailgun.com/cp (free up to 10K monthly emails)
+  const auth = {
+    auth: {
+      api_key: process.env.EMAIL_SEND_KEY,
+      domain: process.env.EMAIL_SEND_DOMAIN,
+    },
+  };
+
+  const transporter = nodemailer.createTransport(mg(auth));
+
+  // let transporter = nodemailer.createTransport({
+  //   host: 'smtp.sendgrid.net',
+  //   port: 587,
+  //   auth: {
+  //     user: 'apikey',
+  //     pass: process.env.SENDGRID_API_KEY,
+  //   },
+  // });
+
+  transporter.sendMail(
+    {
+      from: 'znsnlab@gmail.com', // verified sender email
+      to: email, // recipient email
+      subject: 'Purchase confirmation', // Subject line
+      text: 'Hello world!', // plain text body
+      html: `
+      <h3>Your order is confirmed</h3>
+      <p>Thank you for shopping with BookShip. We are processing your order. One of our agent will ship your ordered items to your address within the next 3days. Happy shopping.</p>
+      `, // html body
+    },
+    function (error, info) {
+      if (error) {
+        console.log('Email send error', error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    }
+  );
+}
 // console.log(uri)
 
 // jwt verify
@@ -86,35 +130,14 @@ async function run() {
       try {
         const result = await subscriberCollection.insertOne({ email: email });
         console.log(result);
-
-        await sendEmail(
-          email,
-          'Welcome to our newsletter!',
-          'Thank you for subscribing to our newsletter!'
-        );
-
+        //send confirmation email
+        sendOrderEmail();
         res.status(200).send({ message: 'Subscription successful!' });
       } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Something went wrong' });
       }
     });
-
-    const sendEmail = async (to, subject, text) => {
-      const msg = {
-        to,
-        from: 'contact@zamans-lab.com', // Replace with your sender email
-        subject,
-        text,
-      };
-
-      try {
-        await sgMail.send(msg);
-        console.log('Email sent successfully!');
-      } catch (error) {
-        console.error(error);
-      }
-    };
 
     // get all categories from category collection
     app.get('/categories', async (req, res) => {
@@ -154,22 +177,24 @@ async function run() {
         isSeller: user?.role === 'seller',
       });
     });
-    app.put('/categories', async (req, res) => {
-      const category = req.body;
-      const filter = { category: category };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: {
-          category,
-        },
-      };
-      const result = await categoryCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-      res.send(result);
-    });
+
+    // //category update
+    // app.put('/categories', async (req, res) => {
+    //   const category = req.body;
+    //   const filter = { category: category };
+    //   const options = { upsert: true };
+    //   const updateDoc = {
+    //     $set: {
+    //       category,
+    //     },
+    //   };
+    //   const result = await categoryCollection.updateOne(
+    //     filter,
+    //     updateDoc,
+    //     options
+    //   );
+    //   res.send(result);
+    // });
 
     //delete categories based on id
     app.delete('/categories/:id', async (req, res) => {
@@ -208,7 +233,7 @@ async function run() {
           name: user.name,
           phone: user.phone,
           role: user.role,
-          address:user.address,
+          address: user.address,
         },
       };
       console.log(user, query);
@@ -353,7 +378,8 @@ async function run() {
     app.post('/order', async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
-      // console.log(result)
+      //send confirmation email
+      sendOrderEmail(_id, quantity);
       res.json(result);
     });
 
@@ -468,14 +494,6 @@ async function run() {
       res.send(result);
     });
 
-    // get all reviews
-    // app.get('/reviews', async (req, res) => {
-    //     const query = {}
-    //     const cursor = reviewsCollection.find(query);
-    //     const reviews = await cursor.toArray();
-    //     res.send(reviews);
-    // });
-
     // get reviews from database based on service id
     app.get('/reviews/:id', async (req, res) => {
       const query = { bookId: req.params.id };
@@ -503,19 +521,6 @@ async function run() {
       const reviews = await cursor.toArray();
       res.send(reviews);
     });
-
-    //update a review
-    // app.patch('/reviews/:id', async (req, res) => {
-    //   const query = { bookId: req.params.id };
-    //   const update = { $set: req.body };
-    //   const options = { returnOriginal: false };
-    //   const result = await reviewsCollection.findOneAndUpdate(
-    //     query,
-    //     update,
-    //     options
-    //   );
-    //   res.send(result);
-    // });
 
     // update review
     app.put('/reviews/edit/:id', async (req, res) => {
