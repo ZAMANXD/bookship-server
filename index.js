@@ -93,6 +93,8 @@ async function run() {
       .collection('publications');
     const subscriberCollection = client.db('bookship').collection('subscriber');
     const favoruriteCollection = client.db('bookship').collection('favorurite');
+    const cartCollection = client.db('bookship').collection('cart');
+    const blogCollection = client.db('bookship').collection('blogs');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -621,6 +623,7 @@ async function run() {
         res.send(result);
       }
     });
+
     // add to cart
     app.post('/add-to-cart', async (req, res) => {
       const { id, quantity, userEmail } = req.body;
@@ -694,6 +697,13 @@ async function run() {
 
         res.sendStatus(200);
       }
+    });
+
+    //get cart items
+    app.get('/cart/:email', async (req, res) => {
+      const userEmail = req.params;
+      const cart = await cartCollection.findOne({ userEmail });
+      res.send(cart);
     });
 
     // blog
