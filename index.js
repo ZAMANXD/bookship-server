@@ -621,81 +621,93 @@ async function run() {
         res.send(result);
       }
     });
-// add to cart
-app.post('/add-to-cart', async (req, res) => {
-  const { id, quantity, userEmail } = req.body;
-  let cart;
-  cart = await cartCollection.findOne({ userEmail });
-  if (!cart) {
-    await cartCollection.insertOne({ userEmail, items: [{ id, quantity }] });
-  } else {
-    const existingItem = cart.items.find(item => item.id === id);
+    // add to cart
+    app.post('/add-to-cart', async (req, res) => {
+      const { id, quantity, userEmail } = req.body;
+      let cart;
+      cart = await cartCollection.findOne({ userEmail });
+      if (!cart) {
+        await cartCollection.insertOne({
+          userEmail,
+          items: [{ id, quantity }],
+        });
+      } else {
+        const existingItem = cart.items.find((item) => item.id === id);
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.items.push({ id, quantity })
-    }
-    await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
-  }
-  res.sendStatus(200);
-});
-
-// subtract from cart
-app.put('/subtract-from-cart', async (req, res) => {
-  const { id, quantity, userEmail } = req.body;
-  let cart;
-  cart = await cartCollection.findOne({ userEmail });
-
-  if (!cart) {
-    res.sendStatus(404);
-  } else {
-    const existingItem = cart.items.find(item => item.id === id);
-
-    if (existingItem) {
-      existingItem.quantity -= quantity;
-
-      if (existingItem.quantity <= 0) {
-        cart.items = cart.items.filter(item => item.id !== id);
+        if (existingItem) {
+          existingItem.quantity += quantity;
+        } else {
+          cart.items.push({ id, quantity });
+        }
+        await cartCollection.updateOne(
+          { _id: cart._id },
+          { $set: { items: cart.items } }
+        );
       }
-
-      await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
-
       res.sendStatus(200);
-    } else {
-      res.sendStatus(404);
-    }
-  }
-});
+    });
 
-// remove from cart
-app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
-  const { id, userEmail } = req.params;
-  let cart;
-  cart = await cartCollection.findOne({ userEmail });
-  if (!cart) {
-    res.sendStatus(404);
-  } else {
-    cart.items = cart.items.filter(item => item.id !== parseInt(id));
+    // subtract from cart
+    app.put('/subtract-from-cart', async (req, res) => {
+      const { id, quantity, userEmail } = req.body;
+      let cart;
+      cart = await cartCollection.findOne({ userEmail });
 
-    await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
+      if (!cart) {
+        res.sendStatus(404);
+      } else {
+        const existingItem = cart.items.find((item) => item.id === id);
 
-    res.sendStatus(200);
-  }
-});
+        if (existingItem) {
+          existingItem.quantity -= quantity;
 
-// blog  
-  app.get('/blogs',async (req,res)=>{
-    const query = {};
-    const result= await blogCollection.find(query).toArray();
-    res.send(result);
-  });
-  // blog by id
-  app.get('/blogs/:id', async (req, res) => {
-    const id = req.params.id;
-    const blog = await blogCollection.findOne({ _id: ObjectId(id) });
-    res.send(blog);
-  });
+          if (existingItem.quantity <= 0) {
+            cart.items = cart.items.filter((item) => item.id !== id);
+          }
+
+          await cartCollection.updateOne(
+            { _id: cart._id },
+            { $set: { items: cart.items } }
+          );
+
+          res.sendStatus(200);
+        } else {
+          res.sendStatus(404);
+        }
+      }
+    });
+
+    // remove from cart
+    app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
+      const { id, userEmail } = req.params;
+      let cart;
+      cart = await cartCollection.findOne({ userEmail });
+      if (!cart) {
+        res.sendStatus(404);
+      } else {
+        cart.items = cart.items.filter((item) => item.id !== parseInt(id));
+
+        await cartCollection.updateOne(
+          { _id: cart._id },
+          { $set: { items: cart.items } }
+        );
+
+        res.sendStatus(200);
+      }
+    });
+
+    // blog
+    app.get('/blogs', async (req, res) => {
+      const query = {};
+      const result = await blogCollection.find(query).toArray();
+      res.send(result);
+    });
+    // blog by id
+    app.get('/blogs/:id', async (req, res) => {
+      const id = req.params.id;
+      const blog = await blogCollection.findOne({ _id: ObjectId(id) });
+      res.send(blog);
+    });
   } finally {
   }
 }
