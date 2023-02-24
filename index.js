@@ -689,7 +689,7 @@ app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
     const result= await blogCollection.find(query).toArray();
     res.send(result);
   });
-  
+  // blog by id
   app.get('/blogs/:id', async (req, res) => {
     const id = req.params.id;
     const blog = await blogCollection.findOne({ _id: ObjectId(id) });
