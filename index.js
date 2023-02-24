@@ -683,6 +683,7 @@ app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
     res.sendStatus(200);
   }
 });
+
 // blog  
   app.get('/blogs',async (req,res)=>{
     const query = {};
