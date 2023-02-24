@@ -28,52 +28,39 @@ const client = new MongoClient(uri, {
 // In-memory data store for cart items
 const cartItems = [];
 
-
 // // SendGrid config
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-function sendOrderEmail(_id, quantity) {
+function sendOrderEmail(order) {
   const { email } = order;
-
-  // This is your API key that you retrieve from www.mailgun.com/cp (free up to 10K monthly emails)
-  const auth = {
+  const mailgunAuth = {
     auth: {
-      api_key: process.env.EMAIL_SEND_KEY,
-      domain: process.env.EMAIL_SEND_DOMAIN,
+      api_key: process.env.MAIL_GUN_API_KEY,
+      domain: process.env.MAIL_GUN_DOMAIN,
     },
   };
 
-  const transporter = nodemailer.createTransport(mg(auth));
+  const smtpTransport = nodemailer.createTransport(mg(mailgunAuth));
 
-  // let transporter = nodemailer.createTransport({
-  //   host: 'smtp.sendgrid.net',
-  //   port: 587,
-  //   auth: {
-  //     user: 'apikey',
-  //     pass: process.env.SENDGRID_API_KEY,
-  //   },
-  // });
+  const mailOptions = {
+    from: 'morshed952640@gmail.com', // verified sender email
+    to: email, // recipient email
+    subject: 'Purchase confirmation', // Subject line
+    text: 'Hello world!', // plain text body
+    html: `
+    <h3 style="font-size: 24px;">Your Payment was Successful!</h3>
+    <p style="font-size: 18px;">Thank you for shopping with BookShip. We are processing your order. One of our agent will ship your ordered items to your address within the next 03 Days. Happy Shipping!.</p>
+    `, // html body
+  };
 
-  transporter.sendMail(
-    {
-      from: 'znsnlab@gmail.com', // verified sender email
-      to: email, // recipient email
-      subject: 'Purchase confirmation', // Subject line
-      text: 'Hello world!', // plain text body
-      html: `
-      <h3>Your order is confirmed</h3>
-      <p>Thank you for shopping with BookShip. We are processing your order. One of our agent will ship your ordered items to your address within the next 3days. Happy shopping.</p>
-      `, // html body
-    },
-    function (error, info) {
-      if (error) {
-        console.log('Email send error', error);
-      } else {
-        console.log('Email sent: ' + info.response);
-      }
+  smtpTransport.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log('Email send error', error);
+    } else {
+      console.log('Email sent: ' + info.response);
     }
-  );
+  });
 }
 // console.log(uri)
 
@@ -105,8 +92,6 @@ async function run() {
       .db('bookship')
       .collection('publications');
     const subscriberCollection = client.db('bookship').collection('subscriber');
-    const cartCollection = client.db('bookship').collection('cart');
-    const blogCollection = client.db('bookship').collection('blogs');
     const favoruriteCollection = client.db('bookship').collection('favorurite');
 
     app.post('/create-payment-intent', async (req, res) => {
@@ -385,7 +370,8 @@ async function run() {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       //send confirmation email
-      sendOrderEmail(_id, quantity);
+      sendOrderEmail(order);
+      // console.log(order);
       res.json(result);
     });
 
@@ -614,14 +600,28 @@ async function run() {
     app.get('/booksprice', async (req, res) => {
       const value = req.query.value;
       const query = {};
-      const result= await bookCollection
+      const result = await bookCollection
         .find(query)
         .sort({ discountedPrice: value })
         .toArray();
       res.send(result);
     });
 
-    // add to cart
+    // Add to favoruite
+    app.put('/favorurite', async (req, res) => {
+      const favorurite = req.body;
+      const query = { _id: favorurite._id };
+      // console.log(favorurite);
+      // console.log(query);
+      const exesting = await favoruriteCollection.findOne(query);
+      if (exesting) {
+        res.send({ message: 'This is already existing' });
+      } else {
+        const result = await favoruriteCollection.insertOne(favorurite);
+        res.send(result);
+      }
+    });
+// add to cart
 app.post('/add-to-cart', async (req, res) => {
   const { id, quantity, userEmail } = req.body;
   let cart;
