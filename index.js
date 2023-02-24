@@ -622,14 +622,35 @@ async function run() {
       }
     });
 
-    // get to favoruite
-    app.get('/favorurite/:email', async (req, res) => {
-      const email = req.params.email;
-      // console.log(email);
-      const result = await favoruriteCollection
-        .find({ userEmail: email })
-        .toArray();
+    // remove from cart
+    app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
+      const { id, userEmail } = req.params;
+      let cart;
+      cart = await cartCollection.findOne({ userEmail });
+      if (!cart) {
+        res.sendStatus(404);
+      } else {
+        cart.items = cart.items.filter((item) => item.id !== parseInt(id));
+
+        await cartCollection.updateOne(
+          { _id: cart._id },
+          { $set: { items: cart.items } }
+        );
+
+        res.sendStatus(200);
+      }
+    });
+    // blog
+    app.get('/blogs', async (req, res) => {
+      const query = {};
+      const result = await blogCollection.find(query).toArray();
       res.send(result);
+    });
+
+    app.get('/blogs/:id', async (req, res) => {
+      const id = req.params.id;
+      const blog = await blogCollection.findOne({ _id: ObjectId(id) });
+      res.send(blog);
     });
   } finally {
   }
