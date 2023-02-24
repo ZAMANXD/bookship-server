@@ -25,6 +25,10 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// In-memory data store for cart items
+const cartItems = [];
+
+
 // // SendGrid config
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -101,6 +105,8 @@ async function run() {
       .db('bookship')
       .collection('publications');
     const subscriberCollection = client.db('bookship').collection('subscriber');
+    const cartCollection = client.db('bookship').collection('cart');
+    const blogCollection = client.db('bookship').collection('blogs');
     const favoruriteCollection = client.db('bookship').collection('favorurite');
 
     app.post('/create-payment-intent', async (req, res) => {
@@ -615,30 +621,80 @@ async function run() {
       res.send(result);
     });
 
-    // Add to favoruite 
-    app.put('/favorurite',async(req,res)=>{
-      const favorurite = req.body; 
-      const query ={_id:favorurite._id}
-      // console.log(favorurite);
-      // console.log(query);
-      const exesting = await favoruriteCollection.findOne(query);
-      if(exesting){
-        res.send({message:"This is already existing"})
-      }
-      else{
-        const result = await favoruriteCollection.insertOne(favorurite)
-      res.send(result)
-      }
-    })
+    // add to cart
+app.post('/add-to-cart', async (req, res) => {
+  const { id, quantity, userEmail } = req.body;
+  let cart;
+  cart = await cartCollection.findOne({ userEmail });
+  if (!cart) {
+    await cartCollection.insertOne({ userEmail, items: [{ id, quantity }] });
+  } else {
+    const existingItem = cart.items.find(item => item.id === id);
 
-    // get to favoruite
-    app.get("/favorurite/:email",async(req,res)=>{
-      const email = req.params.email;
-      // console.log(email);
-      const result = await favoruriteCollection.find({userEmail: email}).toArray();
-      res.send(result)
-    })
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      cart.items.push({ id, quantity })
+    }
+    await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
+  }
+  res.sendStatus(200);
+});
 
+// subtract from cart
+app.put('/subtract-from-cart', async (req, res) => {
+  const { id, quantity, userEmail } = req.body;
+  let cart;
+  cart = await cartCollection.findOne({ userEmail });
+
+  if (!cart) {
+    res.sendStatus(404);
+  } else {
+    const existingItem = cart.items.find(item => item.id === id);
+
+    if (existingItem) {
+      existingItem.quantity -= quantity;
+
+      if (existingItem.quantity <= 0) {
+        cart.items = cart.items.filter(item => item.id !== id);
+      }
+
+      await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
+
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(404);
+    }
+  }
+});
+
+// remove from cart
+app.delete('/remove-from-cart/:id/:userEmail', async (req, res) => {
+  const { id, userEmail } = req.params;
+  let cart;
+  cart = await cartCollection.findOne({ userEmail });
+  if (!cart) {
+    res.sendStatus(404);
+  } else {
+    cart.items = cart.items.filter(item => item.id !== parseInt(id));
+
+    await cartCollection.updateOne({ _id: cart._id }, { $set: { items: cart.items } });
+
+    res.sendStatus(200);
+  }
+});
+// blog  
+  app.get('/blogs',async (req,res)=>{
+    const query = {};
+    const result= await blogCollection.find(query).toArray();
+    res.send(result);
+  });
+  
+  app.get('/blogs/:id', async (req, res) => {
+    const id = req.params.id;
+    const blog = await blogCollection.findOne({ _id: ObjectId(id) });
+    res.send(blog);
+  });
   } finally {
   }
 }
