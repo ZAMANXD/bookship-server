@@ -32,8 +32,8 @@ const cartItems = [];
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-function sendOrderEmail(order) {
-  const { email } = order;
+function sendOrderEmail(payment) {
+  const { email } = payment;
   const mailgunAuth = {
     auth: {
       api_key: process.env.MAIL_GUN_API_KEY,
@@ -95,6 +95,7 @@ async function run() {
     const favoruriteCollection = client.db('bookship').collection('favorurite');
     const cartCollection = client.db('bookship').collection('cart');
     const blogCollection = client.db('bookship').collection('blogs');
+    const paymentsCollection = client.db('bookship').collection('payments');
 
     app.post('/create-payment-intent', async (req, res) => {
       const order = req.body;
@@ -267,7 +268,7 @@ async function run() {
 
     // get lastly added 3 books from book collection
     app.get('/recents', async (req, res) => {
-      const cursor = bookCollection.find({}).sort({ _id: -1 }).limit(3);
+      const cursor = bookCollection.find({}).sort({ _id: -1 }).limit(10);
       const books = await cursor.toArray();
       // console.log(books)
       res.send(books);
@@ -372,7 +373,16 @@ async function run() {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       //send confirmation email
-      sendOrderEmail(order);
+      // sendOrderEmail(order);
+      // console.log(order);
+      res.json(result);
+    });
+    // post order data to database
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const result = await paymentsCollection.insertOne(payment);
+      //send confirmation email
+      sendOrderEmail(payment);
       // console.log(order);
       res.json(result);
     });
@@ -719,13 +729,13 @@ async function run() {
       res.send(blog);
     });
 
-    // get fuction for 
-    app.get("/favorite/:email",async(req,res)=>{
-      const email = req.params.email
-      const query = {userEmail:email}
+    // get fuction for
+    app.get('/favorite/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
       const allproduct = await favoruriteCollection.find(query).toArray();
-      res.send(allproduct)
-    })
+      res.send(allproduct);
+    });
   } finally {
   }
 }
