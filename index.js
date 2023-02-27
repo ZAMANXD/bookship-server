@@ -612,7 +612,7 @@ async function run() {
     // Add to favoruite
     app.put('/favorurite', async (req, res) => {
       const favorurite = req.body;
-      const query = { _id: favorurite._id };
+      const query = { productId: favorurite.productId };
       // console.log(favorurite);
       // console.log(query);
       const exesting = await favoruriteCollection.findOne(query);
@@ -718,6 +718,14 @@ async function run() {
       const blog = await blogCollection.findOne({ _id: ObjectId(id) });
       res.send(blog);
     });
+
+    // get fuction for 
+    app.get("/favorite/:email",async(req,res)=>{
+      const email = req.params.email
+      const query = {userEmail:email}
+      const allproduct = await favoruriteCollection.find(query).toArray();
+      res.send(allproduct)
+    })
   } finally {
   }
 }
