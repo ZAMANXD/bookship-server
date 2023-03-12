@@ -389,7 +389,7 @@ async function run() {
 
     // need jwt
 
-    // get orders based on email query and match the email with selleremail
+    // get orders based on email query and match the email with selleremailss
     app.get('/orders', async (req, res) => {
       // const decoded = req.decoded;
       // console.log('books for seller', decoded);
